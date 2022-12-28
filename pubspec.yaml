@@ -1,0 +1,12 @@
+name: linear_timer
+description: A widget to use a Linear Progress Indicator as a timer
+version: 1.0.0
+homepage: https://github.com/damadenacar/flutter.linear_timer
+
+environment:
+  sdk: '>=2.18.5 <3.0.0'
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
