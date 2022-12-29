@@ -31,6 +31,29 @@ class MyApp extends StatelessWidget {
   }
 }
 
+class LinearWidgetDemoBasic extends StatefulWidget {
+  const LinearWidgetDemoBasic({super.key});
+
+  @override
+  State<LinearWidgetDemoBasic> createState() => _LinearWidgetDemoBasicState();
+}
+
+class _LinearWidgetDemoBasicState extends State<LinearWidgetDemoBasic> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: LinearTimer(
+          duration: const Duration(seconds: 5),
+          onTimerEnd: () {
+            print("timer ended");
+          },
+        )
+      )
+    );
+  }
+}
+
 class LinearWidgetDemo extends StatefulWidget {
   const LinearWidgetDemo({super.key});
 
@@ -38,11 +61,20 @@ class LinearWidgetDemo extends StatefulWidget {
   State<LinearWidgetDemo> createState() => _LinearWidgetDemoState();
 }
 
-class _LinearWidgetDemoState extends State<LinearWidgetDemo> {
+class _LinearWidgetDemoState extends State<LinearWidgetDemo> with TickerProviderStateMixin {
 
-  LinearTimerController timerController1 = LinearTimerController();
-  LinearTimerController timerController2 = LinearTimerController();
-  LinearTimerController timerControllerShared = LinearTimerController();
+  late LinearTimerController timerController1 = LinearTimerController(this);
+  late LinearTimerController timerController2 = LinearTimerController(this);
+  late LinearTimerController timerControllerShared = LinearTimerController(this);
+
+  @override
+  void dispose() {
+    timerController1.dispose();
+    timerController2.dispose();
+    timerControllerShared.dispose();
+
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

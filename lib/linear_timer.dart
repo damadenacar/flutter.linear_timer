@@ -2,43 +2,108 @@ library linear_timer;
 
 import 'package:flutter/material.dart';
 
+abstract class _Subscriber {
+  void onStart();
+  void onEnd();
+  void onUpdate();
+}
+
 /// Class that enables controlling the timer from outside the LinearTimer
 ///   If provided a controller, it is possible to start, stop and reset the
 ///   timer from outside.
 class LinearTimerController {
 
+  // Calls to update the timers
+  void _onUpdate() => _subscribers.forEach((element) { element.onUpdate(); });
+  void _onEnd() => _subscribers.forEach((element) { element.onEnd(); });
+  void _onStart() => _subscribers.forEach((element) { element.onStart(); });
+
+  // The animation controller, that will be created later
+  late final AnimationController _controller;
+
+  // This is the value for the animation (between 0 and 1)
+  double get value => _controller.value;
+
+  /// We'll create an animation controller for this object, and we need a [tickerProvider] with implements the TickerProvider
+  ///   The [tickerProvider] will usually be a StatefulWidget that implements the _TickerProviderStateMixin_. If only using 
+  ///   a single animation (i.e. this one), it would be enough to use the _SingleTickerProviderStateMixin_, but if using multiple
+  ///   animations in a widget, the _TickerProviderStateMixin_ will be needed.
+  /// 
+  /// The parent object needs to create the LinearTimerController that controls the behavior of the timer, but it also needs
+  ///   to dispose it by calling _dispose_ function. So it is advisable to use it as in the example
+  /// 
+  /// ```
+  /// class _LinearWidgetDemoState extends State<LinearWidgetDemo> with TickerProviderStateMixin {
+  ///   @override
+  ///   void initState() {
+  ///     super.initState();
+  ///     timerController = LinearTimerController(this);
+  ///   }
+  ///   @override
+  ///   void dispose() {
+  ///     timerController.dispose();
+  ///     super.dispose();
+  ///   }
+  ///  ...
+  /// }
+  /// ```
+  LinearTimerController(TickerProvider tickerProvider) {
+    _controller = AnimationController(
+      lowerBound: 0,
+      upperBound: 1,
+      vsync: tickerProvider
+    );
+
+    _controller
+      ..addListener(() {
+        _onUpdate();
+      })
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          _onEnd();
+        }
+      });    
+  }
+
+  // Need to call to free resources
+  void dispose() {
+    _controller.dispose();
+  }
+  
   /// Resets the timer (it will continue running, if it was before calling reset)
-  void reset() => _callHandlers(_onReset);
-
-  /// Starts the timer, if it has been stopped before
-  void start() => _callHandlers(_onStart);
-
-  /// Stops the timer, if it has been started before
-  void stop() => _callHandlers(_onStop);
-
-  /// Function that calls a list of handlers, in the same order
-  void _callHandlers(List<VoidCallback> handlerList) {
-    if (handlerList.isNotEmpty) {
-      for (VoidCallback handler in handlerList) {
-        handler.call();
-      }
+  void reset() {
+    if (_controller.isAnimating) {
+      _controller.forward(from: 0);
+    } else {
+      _controller.value = 0;
     }
   }
 
-  /// Function to add a handler to a list
-  void _addHandler(List<VoidCallback> handlerList, VoidCallback handler) {
-    handlerList.add(handler);
+  /// Starts the timer, if it has been stopped before
+  void start({bool restart = false}) {
+    _onStart();
+    _controller.forward(from: restart?0:_controller.value);
   }
 
-  // Functions to add the handlers
-  void _addOnResetHandler(VoidCallback handler) => _addHandler(_onReset, handler);
-  void _addOnStopHandler(VoidCallback handler) => _addHandler(_onStop, handler);
-  void _addOnStartHandler(VoidCallback handler) => _addHandler(_onStart, handler);
+  /// Stops the timer, if it has been started before
+  void stop() {
+    _controller.stop();
+  }
 
-  /// Lists of handlers
-  final List<VoidCallback> _onReset = [];
-  final List<VoidCallback> _onStart = [];
-  final List<VoidCallback> _onStop = [];
+  // Sets the duration for the timer
+  set _duration(Duration duration) {
+    _controller.duration = duration;
+  }
+
+  final List<_Subscriber> _subscribers = [];
+  void _subscribe(_Subscriber subscriber) {
+    if (!_subscribers.contains(subscriber)) {
+      _subscribers.add(subscriber);
+    }
+  }
+  void _unsubscribe(_Subscriber subscriber) {
+    _subscribers.remove(subscriber);
+  }
 }
 
 /// Class that implements a linear progress indicator, as if it was a timer
@@ -46,6 +111,12 @@ class LinearTimer extends StatefulWidget {
 
   // The callback to call when the timer ends
   final VoidCallback? onTimerEnd;
+  
+  // The callback to call when the timer is started
+  final VoidCallback? onTimerStart;
+
+  // The callback to call whenever the timer is updated
+  final VoidCallback? onUpdate;
   
   // The duration for the timer
   final Duration duration;
@@ -70,6 +141,8 @@ class LinearTimer extends StatefulWidget {
     required this.duration, 
     this.forward = true, 
     this.onTimerEnd, 
+    this.onTimerStart,
+    this.onUpdate,
     this.controller,
     this.color,
     this.backgroundColor,
@@ -81,102 +154,72 @@ class LinearTimer extends StatefulWidget {
   State<LinearTimer> createState() => _LinearTimerState();
 }
 
-class _LinearTimerState extends State<LinearTimer>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+class _LinearTimerState extends State<LinearTimer> with SingleTickerProviderStateMixin implements _Subscriber {
 
-  /// The start handler; depending on if we want to be a countdown or a time counter, it will go forward or backwards
-  ///   [restart] forces a restart, even if the timer has arrived to a final state
-  void start({bool restart = false}) {
-    if (widget.forward) {
-      _controller.forward(from: restart?0:_controller.value);
-    } else {
-      _controller.reverse(from: restart?1:_controller.value);
-    }
-  }
-
-  /// Handler that stops the timer
-  void stop() {
-    _controller.stop();
-  }
-
-  /// Handler to reset the timer and continue running if it already was
-  void reset() {
-    bool doStart = _controller.isAnimating;
-    if (widget.forward) {
-      _controller.value = 0;
-    } else {
-      _controller.value = 1;
-    }
-    if (doStart) {
-      start();
-    } 
-    setState(() {
-    });
-  }
+  late LinearTimerController _timerController;
 
   @override
   void initState() {
     super.initState();
 
-    // We'll add the handlers to the controller, if provided
-    if (widget.controller != null) {
-      widget.controller!._addOnResetHandler(() => reset());
-      widget.controller!._addOnStartHandler(() => start());
-      widget.controller!._addOnStopHandler(() => stop());
+    // If the controller is provided, use it; otherwise, create a new one
+    if (widget.controller == null) {
+      _timerController = LinearTimerController(this);
+    } else {
+      _timerController = widget.controller!;
     }
 
-    // Prepare the animation controller in our bounds (0 to 1), as LinearProgress understands.
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-      lowerBound: 0,
-      upperBound: 1,
-    );
+    _timerController._duration = widget.duration;
+    _timerController._subscribe(this);
 
-    // We'll add a listener so that the value is updated, and a StatusListener, so that the onTimerEnd is properly called
-    _controller
-      ..addListener(() {
-        setState(() {
-        });
-      })
-      ..addStatusListener((status) {
-        if ((status == AnimationStatus.completed) && (widget.forward)) {
-          if (widget.onTimerEnd != null) {
-            widget.onTimerEnd!.call();
-          }
-        }
-        if ((status == AnimationStatus.dismissed) && (!widget.forward)) {
-          if (widget.onTimerEnd != null) {
-            widget.onTimerEnd!.call();
-          }
-        }
-      });
-
-      // Let's reset the timer so that anything starts as expected
-      reset();
-
-      // If there is no controller, let's start automatically
-      if (widget.controller == null) {
-        start();
-      }
+    if (widget.controller == null) {
+      _timerController.start();
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    // Stop receiving notifications
+    _timerController._unsubscribe(this);
+
+    // If we created the controller, we need to dispose it    
+    if (widget.controller == null) {
+      _timerController.dispose();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-
     // The easy part: generating the progress indicator, by setting the value in the controller and the settings
     return LinearProgressIndicator(
-      value: _controller.value,
+      value: widget.forward? _timerController.value : 1 - _timerController.value,
       backgroundColor: widget.backgroundColor,
       color: widget.color,
       minHeight: widget.minHeight,
     );
+  }
+  
+  @override
+  void onEnd() {
+    if (widget.onTimerEnd != null) {
+      widget.onTimerEnd!.call();
+    }
+  }
+  
+  @override
+  void onStart() {
+    if (widget.onTimerStart != null) {
+      widget.onTimerStart!.call();
+    }
+  }
+  
+  @override
+  void onUpdate() {
+    setState(() {
+    });
+    if (widget.onUpdate != null) {
+      widget.onUpdate!.call();
+    }
   }
 }
