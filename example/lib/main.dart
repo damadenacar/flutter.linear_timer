@@ -6,17 +6,12 @@ void main() {
 }
 
 void showSnackBar(BuildContext context, String text) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      duration: const Duration(seconds: 2),
-      action: SnackBarAction(
-        label: 'dismiss', onPressed: () {
-        } 
-      ),
-      content: Text(text),
-      behavior: SnackBarBehavior.floating,
-    )
-  );
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    duration: const Duration(seconds: 2),
+    action: SnackBarAction(label: 'dismiss', onPressed: () {}),
+    content: Text(text),
+    behavior: SnackBarBehavior.floating,
+  ));
 }
 
 class MyApp extends StatelessWidget {
@@ -42,15 +37,13 @@ class _LinearWidgetDemoBasicState extends State<LinearWidgetDemoBasic> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: LinearTimer(
-          duration: const Duration(seconds: 5),
-          onTimerEnd: () {
-            print("timer ended");
-          },
-        )
-      )
-    );
+        body: Center(
+            child: LinearTimer(
+      duration: const Duration(seconds: 5),
+      onTimerEnd: () {
+        print("timer ended");
+      },
+    )));
   }
 }
 
@@ -61,11 +54,12 @@ class LinearWidgetDemo extends StatefulWidget {
   State<LinearWidgetDemo> createState() => _LinearWidgetDemoState();
 }
 
-class _LinearWidgetDemoState extends State<LinearWidgetDemo> with TickerProviderStateMixin {
-
+class _LinearWidgetDemoState extends State<LinearWidgetDemo>
+    with TickerProviderStateMixin {
   late LinearTimerController timerController1 = LinearTimerController(this);
   late LinearTimerController timerController2 = LinearTimerController(this);
-  late LinearTimerController timerControllerShared = LinearTimerController(this);
+  late LinearTimerController timerControllerShared =
+      LinearTimerController(this);
 
   @override
   void dispose() {
@@ -100,18 +94,26 @@ class _LinearWidgetDemoState extends State<LinearWidgetDemo> with TickerProvider
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                IconButton(onPressed: () {
-                  timerController1.start();
-                }, icon: const Icon(Icons.play_arrow)),
-                IconButton(onPressed: () {
-                  timerController1.stop();
-                }, icon: const Icon(Icons.stop)),
-                IconButton(onPressed: () {
-                  timerController1.reset();
-                }, icon: const Icon(Icons.restart_alt))
+                IconButton(
+                    onPressed: () {
+                      timerController1.start();
+                    },
+                    icon: const Icon(Icons.play_arrow)),
+                IconButton(
+                    onPressed: () {
+                      timerController1.stop();
+                    },
+                    icon: const Icon(Icons.stop)),
+                IconButton(
+                    onPressed: () {
+                      timerController1.reset();
+                    },
+                    icon: const Icon(Icons.restart_alt))
               ],
             ),
-            const SizedBox(height: 32,),
+            const SizedBox(
+              height: 32,
+            ),
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 16.0),
               child: Text("simple linear timer (5 seconds countdown)"),
@@ -129,18 +131,26 @@ class _LinearWidgetDemoState extends State<LinearWidgetDemo> with TickerProvider
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                IconButton(onPressed: () {
-                  timerController2.start();
-                }, icon: const Icon(Icons.play_arrow)),
-                IconButton(onPressed: () {
-                  timerController2.stop();
-                }, icon: const Icon(Icons.stop)),
-                IconButton(onPressed: () {
-                  timerController2.reset();
-                }, icon: const Icon(Icons.restart_alt))
+                IconButton(
+                    onPressed: () {
+                      timerController2.start();
+                    },
+                    icon: const Icon(Icons.play_arrow)),
+                IconButton(
+                    onPressed: () {
+                      timerController2.stop();
+                    },
+                    icon: const Icon(Icons.stop)),
+                IconButton(
+                    onPressed: () {
+                      timerController2.reset();
+                    },
+                    icon: const Icon(Icons.restart_alt))
               ],
-            ),            
-            const SizedBox(height: 32,),
+            ),
+            const SizedBox(
+              height: 32,
+            ),
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 16.0),
               child: Text("two linear timers using the same controller"),
@@ -152,7 +162,9 @@ class _LinearWidgetDemoState extends State<LinearWidgetDemo> with TickerProvider
                 showSnackBar(context, "Timer 3 ended");
               },
             ),
-            const SizedBox(height: 8,),
+            const SizedBox(
+              height: 8,
+            ),
             LinearTimer(
               duration: const Duration(seconds: 5),
               controller: timerControllerShared,
@@ -164,17 +176,23 @@ class _LinearWidgetDemoState extends State<LinearWidgetDemo> with TickerProvider
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                IconButton(onPressed: () {
-                  timerControllerShared.start();
-                }, icon: const Icon(Icons.play_arrow)),
-                IconButton(onPressed: () {
-                  timerControllerShared.stop();
-                }, icon: const Icon(Icons.stop)),
-                IconButton(onPressed: () {
-                  timerControllerShared.reset();
-                }, icon: const Icon(Icons.restart_alt))
+                IconButton(
+                    onPressed: () {
+                      timerControllerShared.start();
+                    },
+                    icon: const Icon(Icons.play_arrow)),
+                IconButton(
+                    onPressed: () {
+                      timerControllerShared.stop();
+                    },
+                    icon: const Icon(Icons.stop)),
+                IconButton(
+                    onPressed: () {
+                      timerControllerShared.reset();
+                    },
+                    icon: const Icon(Icons.restart_alt))
               ],
-            ),               
+            ),
           ],
         ),
       ),
